@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
           <p className="mt-1 text-sm text-gray-500">Enter your credentials to continue</p>
         </div>
 
-        <form className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Username</label>
             <div className="relative">
