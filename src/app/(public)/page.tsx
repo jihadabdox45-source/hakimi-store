@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import HeroSection from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
 import CategoryCard from "@/components/CategoryCard";
@@ -12,13 +12,13 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const [featured, categories] = await Promise.all([
-    prisma.product.findMany({
+    getPrisma().product.findMany({
       where: { isActive: true, isFeatured: true },
       include: { category: true },
       take: 8,
       orderBy: { createdAt: "desc" },
     }),
-    prisma.category.findMany({
+    getPrisma().category.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
     }),

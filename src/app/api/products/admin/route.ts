@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     if (search) where.name = { contains: search, mode: "insensitive" };
     if (category) where.categoryId = parseInt(category);
 
-    const products = await prisma.product.findMany({
+    const products = await getPrisma().product.findMany({
       where, include: { category: true }, orderBy: { createdAt: "desc" },
     });
     return NextResponse.json({ success: true, data: products });

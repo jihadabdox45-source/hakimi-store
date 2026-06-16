@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
     if (!session || (session.user as any)?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const setting = await prisma.setting.findFirst();
+    const setting = await getPrisma().setting.findFirst();
     return NextResponse.json({ success: true, data: setting });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const body = await req.json();
-    const setting = await prisma.setting.update({
+    const setting = await getPrisma().setting.update({
       where: { id: 1 },
       data: {
         siteName: body.siteName,

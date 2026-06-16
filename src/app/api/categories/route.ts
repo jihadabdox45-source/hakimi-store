@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET() {
-  const categories = await prisma.category.findMany({
+  const categories = await getPrisma().category.findMany({
     where: { isActive: true }, orderBy: { name: "asc" },
   });
   return NextResponse.json({ success: true, data: categories });
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { requireAdmin } = await import("@/lib/auth");
     await requireAdmin();
     const body = await req.json();
-    const category = await prisma.category.create({
+    const category = await getPrisma().category.create({
       data: { name: body.name, description: body.description, image: body.image || null },
     });
     return NextResponse.json({ success: true, data: category }, { status: 201 });

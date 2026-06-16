@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET() {
-  const products = await prisma.product.findMany({
+  const products = await getPrisma().product.findMany({
     where: { isActive: true, isFeatured: true },
     include: { category: true },
     take: 8,

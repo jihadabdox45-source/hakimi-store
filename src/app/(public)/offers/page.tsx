@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import OffersClient from "./OffersClient";
 import type { Metadata } from "next";
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function OffersPage() {
-  const products = await prisma.product.findMany({
+  const products = await getPrisma().product.findMany({
     where: { isActive: true, discountPrice: { not: null } },
     include: { category: true },
     orderBy: { createdAt: "desc" },

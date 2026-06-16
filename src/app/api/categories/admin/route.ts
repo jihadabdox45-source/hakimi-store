@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
     if (!session || (session.user as any)?.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
+    const categories = await getPrisma().category.findMany({ orderBy: { name: "asc" } });
     return NextResponse.json({ success: true, data: categories });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

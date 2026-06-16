@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (search) where.name = { contains: search, mode: "insensitive" };
   if (category) where.category = { name: category };
 
-  const products = await prisma.product.findMany({
+  const products = await getPrisma().product.findMany({
     where,
     include: { category: true },
     orderBy: { createdAt: "desc" },
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const { requireAdmin } = await import("@/lib/auth");
     await requireAdmin();
     const body = await req.json();
-    const product = await prisma.product.create({
+    const product = await getPrisma().product.create({
       data: {
         name: body.name,
         price: body.price,

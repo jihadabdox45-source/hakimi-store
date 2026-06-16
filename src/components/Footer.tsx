@@ -3,8 +3,8 @@ import Link from "next/link";
 import HakimLogo from "./HakimLogo";
 
 export default async function Footer() {
-  const { prisma } = await import("@/lib/prisma");
-  const setting = await prisma.setting.findFirst();
+  const { getPrisma } = await import("@/lib/prisma");
+  const setting = await getPrisma().setting.findFirst();
 
   return (
     <footer className="bg-gray-900 text-white">

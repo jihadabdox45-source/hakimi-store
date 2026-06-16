@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await prisma.product.findUnique({ where: { id: Number(id) }, include: { category: true } });
+  const product = await getPrisma().product.findUnique({ where: { id: Number(id) }, include: { category: true } });
   if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ success: true, data: product });
 }
@@ -14,7 +14,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     await requireAdmin();
     const { id } = await params;
     const body = await req.json();
-    const product = await prisma.product.update({
+    const product = await getPrisma().product.update({
       where: { id: Number(id) },
       data: {
         ...(body.name !== undefined && { name: body.name }),
@@ -38,7 +38,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { requireAdmin } = await import("@/lib/auth");
     await requireAdmin();
     const { id } = await params;
-    await prisma.product.delete({ where: { id: Number(id) } });
+    await getPrisma().product.delete({ where: { id: Number(id) } });
     return NextResponse.json({ success: true, message: "Deleted" });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
