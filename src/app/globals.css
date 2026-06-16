@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--font-inter), sans-serif; direction: ltr; text-align: left; overflow-x: hidden; width: 100%; }
-.font-heading { font-family: var(--font-cormorant), serif; }
-html { overflow-x: hidden; width: 100%; }
+body {
+  font-family: var(--font-inter), sans-serif;
+  direction: ltr;
+}
