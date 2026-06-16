@@ -10,10 +10,12 @@ import HakimLogo from "./HakimLogo";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const count = useCartStore((s) => s.getCount());
   const pathname = usePathname();
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -53,7 +55,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <Link href="/cart" className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#fcf9f2] hover:bg-[#f8f3e3] text-[#17543A] transition-colors duration-200" title="Cart">
               <ShoppingCart size={20} />
-              {count > 0 && (
+              {mounted && count > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#B89B4C] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white">
                   {count}
                 </span>
