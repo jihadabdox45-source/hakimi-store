@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="admin-layout" style={{ minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
       <AdminSidebar user={session.user as any} />
-      <div style={{ marginLeft: 0, minHeight: "100vh", backgroundColor: "#f3f4f6" }} className="lg:ml-64">
+      <div style={{ minHeight: "100vh", backgroundColor: "#f3f4f6" }} className="lg:ml-64">
         <main className="p-6">{children}</main>
       </div>
     </div>
