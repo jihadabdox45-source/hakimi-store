@@ -6,7 +6,7 @@ export default function middleware(req: NextRequest) {
 
   if (pathname.startsWith("/admin") && !isLoginPage) {
     const authCookie = req.cookies.getAll().find((c) => c.name.startsWith("authjs.session-token"))
-    if (!token) {
+    if (!authCookie) {
       return NextResponse.redirect(new URL("/admin/login", req.url))
     }
   }
