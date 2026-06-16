@@ -12,6 +12,8 @@ export default function AdminCategoriesPage() {
   const [selected, setSelected] = useState<any>(null);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -21,15 +23,41 @@ export default function AdminCategoriesPage() {
     setLoading(false);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAdd = async () => {
-    await fetch("/api/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, description: desc }) });
-    setShowAdd(false); setName(""); setDesc(""); fetchData();
+    let imageUrl = null;
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      const uploadRes = await fetch("/api/uploads", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) imageUrl = uploadData.url;
+    }
+    await fetch("/api/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, description: desc, image: imageUrl }) });
+    setShowAdd(false); setImageFile(null); setImagePreview(null); setName(""); setDesc(""); fetchData();
   };
 
   const handleEdit = async () => {
     if (!selected) return;
-    await fetch(`/api/categories/${selected.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, description: desc }) });
-    setShowEdit(false); setSelected(null); fetchData();
+    let imageUrl = selected.image;
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      const uploadRes = await fetch("/api/uploads", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) imageUrl = uploadData.url;
+    }
+    await fetch(`/api/categories/${selected.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, description: desc, image: imageUrl }) });
+    setShowEdit(false); setImageFile(null); setImagePreview(null); setSelected(null); fetchData();
   };
 
   const handleDelete = async () => {
@@ -49,7 +77,7 @@ export default function AdminCategoriesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input placeholder="Search categories..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#17543A]" />
         </div>
-        <button onClick={() => { setName(""); setDesc(""); setShowAdd(true); }} className="bg-[#17543A] text-white px-4 py-2 rounded-lg hover:bg-[#144a33] flex items-center gap-2 text-sm"><Plus className="w-4 h-4" /> Add Category</button>
+        <button onClick={() => { setName(""); setDesc(""); setImageFile(null); setImagePreview(null); setShowAdd(true); }} className="bg-[#17543A] text-white px-4 py-2 rounded-lg hover:bg-[#144a33] flex items-center gap-2 text-sm"><Plus className="w-4 h-4" /> Add Category</button>
       </div>
 
       <p className="text-sm text-gray-600 mb-4">Showing {filtered.length} of {categories.length} categories</p>
@@ -66,7 +94,7 @@ export default function AdminCategoriesPage() {
                 <td className="px-4 py-3 text-gray-500">{c.description || "-"}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => { setSelected(c); setName(c.name); setDesc(c.description || ""); setShowEdit(true); }} className="text-green-600 hover:text-green-900"><Edit className="w-4 h-4" /></button>
+                    <button onClick={() => { setSelected(c); setName(c.name); setDesc(c.description || ""); setImagePreview(c.image); setImageFile(null); setShowEdit(true); }} className="text-green-600 hover:text-green-900"><Edit className="w-4 h-4" /></button>
                     <button onClick={() => { setSelected(c); setShowDelete(true); }} className="text-red-600 hover:text-red-900"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </td>
@@ -79,12 +107,26 @@ export default function AdminCategoriesPage() {
       {showAdd && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Add Category</h3><button onClick={() => setShowAdd(false)}><X className="w-5 h-5" /></button></div>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Add Category</h3><button onClick={() => { setShowAdd(false); setImageFile(null); setImagePreview(null); }}><X className="w-5 h-5" /></button></div>
             <div className="space-y-3">
               <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <div className="flex items-center gap-3">
+                  {imagePreview && (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                      <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm border">
+                    Choose File
+                    <input type="file" accept="image/*" onChange={(e) => handleImageSelect(e)} className="hidden" />
+                  </label>
+                </div>
+              </div>
               <input placeholder="Description" value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
-            <div className="flex justify-end gap-3 mt-6"><button onClick={() => setShowAdd(false)} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button><button onClick={handleAdd} className="px-4 py-2 bg-[#17543A] text-white rounded-lg text-sm">Add</button></div>
+            <div className="flex justify-end gap-3 mt-6"><button onClick={() => { setShowAdd(false); setImageFile(null); setImagePreview(null); }} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button><button onClick={handleAdd} className="px-4 py-2 bg-[#17543A] text-white rounded-lg text-sm">Add</button></div>
           </div>
         </div>
       )}
@@ -92,12 +134,26 @@ export default function AdminCategoriesPage() {
       {showEdit && selected && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Edit Category</h3><button onClick={() => setShowEdit(false)}><X className="w-5 h-5" /></button></div>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Edit Category</h3><button onClick={() => { setShowEdit(false); setImageFile(null); setImagePreview(null); }}><X className="w-5 h-5" /></button></div>
             <div className="space-y-3">
               <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <div className="flex items-center gap-3">
+                  {(imagePreview || selected?.image) && (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                      <img src={imagePreview || selected?.image || ""} alt="preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm border">
+                    Choose File
+                    <input type="file" accept="image/*" onChange={(e) => handleImageSelect(e)} className="hidden" />
+                  </label>
+                </div>
+              </div>
               <input value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
             </div>
-            <div className="flex justify-end gap-3 mt-6"><button onClick={() => setShowEdit(false)} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button><button onClick={handleEdit} className="px-4 py-2 bg-[#17543A] text-white rounded-lg text-sm">Update</button></div>
+            <div className="flex justify-end gap-3 mt-6"><button onClick={() => { setShowEdit(false); setImageFile(null); setImagePreview(null); }} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button><button onClick={handleEdit} className="px-4 py-2 bg-[#17543A] text-white rounded-lg text-sm">Update</button></div>
           </div>
         </div>
       )}

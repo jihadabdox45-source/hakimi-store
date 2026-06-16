@@ -42,31 +42,63 @@ export default function AdminProductsPage() {
   const [discountVal, setDiscountVal] = useState("");
 
   const [form, setForm] = useState({ name: "", price: "", categoryId: "", isActive: true, isFeatured: false });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const filtered = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.category?.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAdd = async () => {
+    let imageUrl = null;
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      const uploadRes = await fetch("/api/uploads", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) imageUrl = uploadData.url;
+    }
     await fetch("/api/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: form.name, price: parseFloat(form.price), categoryId: form.categoryId ? parseInt(form.categoryId) : null, isActive: form.isActive, isFeatured: form.isFeatured }),
+      body: JSON.stringify({ name: form.name, price: parseFloat(form.price), categoryId: form.categoryId ? parseInt(form.categoryId) : null, isActive: form.isActive, isFeatured: form.isFeatured, image: imageUrl }),
     });
     setShowAdd(false);
+    setImageFile(null);
+    setImagePreview(null);
     setForm({ name: "", price: "", categoryId: "", isActive: true, isFeatured: false });
     fetchData();
   };
 
   const handleEdit = async () => {
     if (!selected) return;
+    let imageUrl = selected.image;
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      const uploadRes = await fetch("/api/uploads", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) imageUrl = uploadData.url;
+    }
     await fetch(`/api/products/${selected.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: selected.name, price: selected.price, categoryId: selected.categoryId, isActive: selected.isActive, isFeatured: selected.isFeatured }),
+      body: JSON.stringify({ name: selected.name, price: selected.price, categoryId: selected.categoryId, isActive: selected.isActive, isFeatured: selected.isFeatured, image: imageUrl }),
     });
     setShowEdit(false);
+    setImageFile(null);
+    setImagePreview(null);
     setSelected(null);
     fetchData();
   };
@@ -102,7 +134,7 @@ export default function AdminProductsPage() {
           <input type="text" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17543A] text-sm" />
         </div>
-        <button onClick={() => { setForm({ name: "", price: "", categoryId: "", isActive: true, isFeatured: false }); setShowAdd(true); }}
+        <button onClick={() => { setForm({ name: "", price: "", categoryId: "", isActive: true, isFeatured: false }); setImageFile(null); setImagePreview(null); setShowAdd(true); }}
           className="bg-[#17543A] text-white px-4 py-2 rounded-lg hover:bg-[#144a33] flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" /> Add Product
         </button>
@@ -138,7 +170,7 @@ export default function AdminProductsPage() {
                 <td className="px-4 py-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{p.isActive ? "Active" : "Inactive"}</span></td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => { setSelected(p); setShowEdit(true); }} className="text-green-600 hover:text-green-900" title="Edit"><Edit className="w-4 h-4" /></button>
+                    <button onClick={() => { setSelected(p); setImagePreview(p.image); setImageFile(null); setShowEdit(true); }} className="text-green-600 hover:text-green-900" title="Edit"><Edit className="w-4 h-4" /></button>
                     <button onClick={() => { setSelected(p); setShowDelete(true); }} className="text-red-600 hover:text-red-900" title="Delete"><Trash2 className="w-4 h-4" /></button>
                     <button onClick={() => { setSelected(p); setDiscountVal(p.discountPrice?.toString() || ""); setShowDiscount(true); }} className="text-yellow-600 hover:text-yellow-900" title="Discount"><Percent className="w-4 h-4" /></button>
                   </div>
@@ -152,9 +184,23 @@ export default function AdminProductsPage() {
       {showAdd && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Add Product</h3><button onClick={() => setShowAdd(false)}><X className="w-5 h-5" /></button></div>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Add Product</h3><button onClick={() => { setShowAdd(false); setImageFile(null); setImagePreview(null); }}><X className="w-5 h-5" /></button></div>
             <div className="space-y-3">
               <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <div className="flex items-center gap-3">
+                  {imagePreview && (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                      <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm border">
+                    Choose File
+                    <input type="file" accept="image/*" onChange={(e) => handleImageSelect(e)} className="hidden" />
+                  </label>
+                </div>
+              </div>
               <input type="number" placeholder="Price" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm">
                 <option value="">No category</option>
@@ -163,7 +209,7 @@ export default function AdminProductsPage() {
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isFeatured} onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })} /> Featured</label>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowAdd(false)} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button>
+              <button onClick={() => { setShowAdd(false); setImageFile(null); setImagePreview(null); }} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button>
               <button onClick={handleAdd} className="px-4 py-2 bg-[#17543A] text-white rounded-lg text-sm">Add</button>
             </div>
           </div>
@@ -173,9 +219,23 @@ export default function AdminProductsPage() {
       {showEdit && selected && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Edit Product</h3><button onClick={() => setShowEdit(false)}><X className="w-5 h-5" /></button></div>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-semibold">Edit Product</h3><button onClick={() => { setShowEdit(false); setImageFile(null); setImagePreview(null); }}><X className="w-5 h-5" /></button></div>
             <div className="space-y-3">
               <input value={selected.name} onChange={(e) => setSelected({ ...selected, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <div className="flex items-center gap-3">
+                  {(imagePreview || selected.image) && (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                      <img src={imagePreview || selected.image || ""} alt="preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm border">
+                    Choose File
+                    <input type="file" accept="image/*" onChange={(e) => handleImageSelect(e)} className="hidden" />
+                  </label>
+                </div>
+              </div>
               <input type="number" value={selected.price} onChange={(e) => setSelected({ ...selected, price: parseFloat(e.target.value) })} className="w-full px-3 py-2 border rounded-lg text-sm" />
               <select value={selected.categoryId?.toString() || ""} onChange={(e) => setSelected({ ...selected, categoryId: e.target.value ? parseInt(e.target.value) : null })} className="w-full px-3 py-2 border rounded-lg text-sm">
                 <option value="">No category</option>
@@ -184,7 +244,7 @@ export default function AdminProductsPage() {
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selected.isFeatured} onChange={(e) => setSelected({ ...selected, isFeatured: e.target.checked })} /> Featured</label>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowEdit(false)} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button>
+              <button onClick={() => { setShowEdit(false); setImageFile(null); setImagePreview(null); }} className="px-4 py-2 bg-gray-100 rounded-lg text-sm">Cancel</button>
               <button onClick={handleEdit} className="px-4 py-2 bg-[#17543A] text-white rounded-lg text-sm">Update</button>
             </div>
           </div>
