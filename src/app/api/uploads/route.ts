@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, url: blob.url });
     }
 
-    return NextResponse.json({ error: "BLOB_READ_WRITE_TOKEN is not set" }, { status: 500 });
+    return NextResponse.json({ error: "BLOB_READ_WRITE_TOKEN not configured" }, { status: 500 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
