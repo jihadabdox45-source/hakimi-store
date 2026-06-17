@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Star, MessageCircle } from "lucide-react";
+import { ShoppingCart, Star, MessageCircle, Check } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 
 interface ProductCardProps {
@@ -86,7 +86,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 inCart ? "bg-green-500 text-white" : "bg-[#17543A] hover:bg-[#144a33] text-white"
               }`}
               title={inCart ? "Added to Cart" : "Add to Cart"}>
-              <ShoppingCart className="w-4 h-4" />
+              {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
             </button>
           </div>
         </div>
