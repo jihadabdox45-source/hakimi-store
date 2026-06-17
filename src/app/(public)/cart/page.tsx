@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -8,10 +8,23 @@ import { useCartStore } from "@/stores/cart";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, getTotal, getCount } = useCartStore();
+  const [whatsapp, setWhatsapp] = useState("");
   const total = getTotal();
   const count = getCount();
 
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.whatsappNumber) {
+          setWhatsapp(res.data.whatsappNumber.replace("+", ""));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleWhatsAppCheckout = () => {
+    if (!whatsapp) return;
     const itemList = items
       .map(
         (i) =>
@@ -23,7 +36,7 @@ export default function CartPage() {
     const message = encodeURIComponent(
       `Hello, I would like to order:\n\n${itemList}\n\nTotal: KSh${total}`
     );
-    window.open(`https://wa.me/254701234567?text=${message}`, "_blank");
+    window.open(`https://wa.me/${whatsapp}?text=${message}`, "_blank");
   };
 
   if (items.length === 0) {
