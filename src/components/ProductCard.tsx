@@ -20,7 +20,9 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const items = useCartStore((s) => s.items);
   const [whatsapp, setWhatsapp] = useState("");
+  const inCart = items.some((i) => i.id === product.id);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -80,7 +82,10 @@ export default function ProductCard({ product }: ProductCardProps) {
               </button>
             )}
             <button onClick={() => addItem({ id: product.id, name: product.name, price: product.price, discountPrice: product.discountPrice, image: product.image }, 1)}
-              className="bg-[#17543A] hover:bg-[#144a33] text-white p-2 rounded-full transition-all" title="Add to Cart">
+              className={`p-2 rounded-full transition-all ${
+                inCart ? "bg-green-500 text-white" : "bg-[#17543A] hover:bg-[#144a33] text-white"
+              }`}
+              title={inCart ? "Added to Cart" : "Add to Cart"}>
               <ShoppingCart className="w-4 h-4" />
             </button>
           </div>
