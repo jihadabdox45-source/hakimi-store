@@ -1,8 +1,8 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star, MessageCircle } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 
 interface ProductCardProps {
@@ -20,9 +20,28 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const [whatsapp, setWhatsapp] = useState("");
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.whatsappNumber) {
+          setWhatsapp(res.data.whatsappNumber.replace("+", ""));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const hasDiscount = product.discountPrice && product.discountPrice < product.price;
   const discountPct = hasDiscount ? Math.round(((product.price - product.discountPrice!) / product.price) * 100) : 0;
   const displayPrice = hasDiscount ? product.discountPrice! : product.price;
+
+  const handleWhatsApp = () => {
+    if (!whatsapp) return;
+    const msg = encodeURIComponent(`Hello, I want to order: ${product.name} - KSh${displayPrice}`);
+    window.open(`https://wa.me/${whatsapp}?text=${msg}`, "_blank");
+  };
 
   return (
     <div className="relative bg-white rounded-2xl overflow-hidden transition-all duration-300 group w-full max-w-sm mx-auto"
@@ -53,10 +72,18 @@ export default function ProductCard({ product }: ProductCardProps) {
             <span className="text-xs sm:text-sm font-extrabold text-[#17543A]">KSh{displayPrice}</span>
             {hasDiscount && <span className="text-xs text-gray-400 line-through ml-1">KSh{product.price}</span>}
           </div>
-          <button onClick={() => addItem({ id: product.id, name: product.name, price: product.price, discountPrice: product.discountPrice, image: product.image }, 1)}
-            className="bg-[#17543A] hover:bg-[#144a33] text-white p-2 rounded-full transition-all" title="Add to Cart">
-            <ShoppingCart className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {whatsapp && (
+              <button onClick={handleWhatsApp}
+                className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-all" title="Order via WhatsApp">
+                <MessageCircle className="w-4 h-4" />
+              </button>
+            )}
+            <button onClick={() => addItem({ id: product.id, name: product.name, price: product.price, discountPrice: product.discountPrice, image: product.image }, 1)}
+              className="bg-[#17543A] hover:bg-[#144a33] text-white p-2 rounded-full transition-all" title="Add to Cart">
+              <ShoppingCart className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
